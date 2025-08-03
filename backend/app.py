@@ -2,8 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise import Tortoise
 from contextlib import asynccontextmanager
-from config import TORTOISE_CONFIG
+from config import TORTOISE_CONFIG,FRONTEND_URL
 from models import Link
+import hashlib
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -13,6 +14,20 @@ async def lifespan(app: FastAPI):
     await Tortoise.close_connections()
 
 app = FastAPI(lifespan=lifespan)
+
+def gerar_codigo_curto(url: str, tamanho: int = 8) -> str:
+    hash_sha256 = hashlib.sha256(url.encode()).hexdigest()
+    return hash_sha256[:tamanho]
+
+def sanitizar_url(url: str) -> str:
+    """
+    Apenas adiciona protocolo se não tiver
+    Usa HTTP como padrão para maior compatibilidade
+    """
+    url = url.strip()
+    if not url.startswith(('http://', 'https://')):
+        url = 'http://' + url  # HTTP como padrão (mais compatível)
+    return url
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,13 +44,29 @@ async def root():
 
 @app.post("/encurtar_url/")
 async def encurtar_link(url: str):
-    link = await Link.get_or_none(original_url=url)
+    url_sanitizada = sanitizar_url(url)
+    
+    link = await Link.get_or_none(original_url=url_sanitizada)
     if link is None:
-        hashed_url = hash(url)
-        link = await Link.create(original_url=str(url), shortened_url=str(hashed_url))
-        return link
+        codigo_curto = gerar_codigo_curto(url_sanitizada)
+        url_completa = f"{FRONTEND_URL}/verificadorPag.html?url={codigo_curto}"
+
+        link_existente = await Link.get_or_none(shortened_url=url_completa)
+        if link_existente is None:
+            link = await Link.create(original_url=url_sanitizada, shortened_url=url_completa)
+            return {
+                "original_url": link.original_url,
+                "shortened_url": link.shortened_url,
+                "message": "Link encurtado com sucesso!"
+            }
+        else:
+            return {"error": "Conflito de hash detectado. Tente novamente ou entre em contato com o suporte."}
     else:
-        return {"error": "Erro ao encurtar o link."}
+        return {
+            "original_url": link.original_url,
+            "shortened_url": link.shortened_url,
+            "message": "Link já foi encurtado anteriormente!"
+        }
     
 
 @app.get('/validar_url/')

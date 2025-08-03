@@ -9,37 +9,52 @@
 
 <body>
     <h1>Encurtador de Links</h1>
-    <form id="urlForm" onsubmit="resolverLink(event)">
+    <form id="urlForm" onsubmit="handleFormSubmit(event)">
         <label for="urlInput">Cole seu link aqui:</label>
         <input type="text" id="urlInput" placeholder="Cole seu link aqui" required>
         <button type="submit">Encurtar</button>
     </form>
     <div id="result"></div>
     <script>
+        // const resolverLink = async (e) => {
+        //     e.preventDefault();
+        //     const url = document.getElementById("urlInput").value;
+        const CONFIG = {
+            BACKEND_URL: 'http://localhost:8000',
+            FRONTEND_URL: 'http://localhost:5500/frontend'  // ou a porta que você usar
+        };
         const resolverLink = async (e) => {
             e.preventDefault();
             const url = document.getElementById("urlInput").value;
-            try {
-                const resolverLink = async (e) => {
-                    e.preventDefault();
-                    const url = document.getElementById("urlInput").value;
-                    const response = await fetch("http://localhost:8000/encurtar/?url=" + encodeURIComponent(url), {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                    });
-                    const urlRetornada = await response.json();
-                    return { url: urlRetornada };
-                }
-                if (urlRetornada && urlRetornada.shortened_url) {
-                    window.location.href = new URL('http://localhost:3000/verificadorPag.html?url=' + encodeURIComponent(urlRetornada.shortened_url));
-                }
-            } catch (error) {
-                console.error("Erro ao encurtar o link:", error);
+            const response = await fetch(`${CONFIG.BACKEND_URL}/encurtar_url/?url=` + encodeURIComponent(url), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+            const urlRetornada = await response.json();
+            return { url: urlRetornada };
+        }
+        const buscandoExibindoLink = async (event) => {
+            event.preventDefault();
+            const urlRetornada = await resolverLink(event);
+            if (urlRetornada && urlRetornada.url.shortened_url) {
+                const url_encurtada = `${CONFIG.FRONTEND_URL}/verificadorPag.html?url=` + encodeURIComponent(urlRetornada.url.shortened_url)
+                const getResultElement = document.getElementById("result");
+                getResultElement.innerText = "Link encurtado: "; // Limpa o conteúdo anterior
+                const link = document.createElement("a");
+                link.href = url_encurtada;
+                link.textContent = url_encurtada;
+                getResultElement.appendChild(link);
             }
         }
-   </script>
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            await buscandoExibindoLink(event);
+
+        }
+    </script>
 </body>
 
 </html>

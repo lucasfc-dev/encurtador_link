@@ -19,3 +19,5 @@ TORTOISE_CONFIG = {
     "use_tz": True,  
     "timezone": "America/Sao_Paulo",  
 }
+
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
