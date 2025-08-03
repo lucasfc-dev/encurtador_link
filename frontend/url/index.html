@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Url validator</title>
+</head>
+<body>
+    <script>
+        const param = new URLSearchParams(window.location.search);
+        const verificarUrl = async (param) => {
+            const url = param.get("url");
+            try {
+                const response = await fetch("http://localhost:8000/validar_url/?url=" + encodeURIComponent(url), {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.body.innerHTML = `
+                        <p>URL Original: ${data.original_url}</p>
+                    `;
+                } else {
+                    document.body.innerHTML = "<p>URL inválida ou não encontrada.</p>";
+                    throw new Error("Erro ao verificar a URL");
+                }
+            } catch (error) {
+                console.error("Erro ao verificar o link:", error);
+            }
+        }
+        verificarUrl(param);
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Encurtador de Links</h1>
+    <form id="urlForm" onsubmit="resolverLink(event)">
+        <label for="urlInput">Cole seu link aqui:</label>
+        <input type="text" id="urlInput" placeholder="Cole seu link aqui" required>
+        <button type="submit">Encurtar</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        const resolverLink = async (e) => {
+            e.preventDefault();
+            const url = document.getElementById("urlInput").value;
+            try {
+                const resolverLink = async (e) => {
+                    e.preventDefault();
+                    const url = document.getElementById("urlInput").value;
+                    const response = await fetch("http://localhost:8000/encurtar/?url=" + encodeURIComponent(url), {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                    });
+                    const urlRetornada = await response.json();
+                    return { url: urlRetornada };
+                }
+                if (urlRetornada && urlRetornada.shortened_url) {
+                    window.location.href = new URL('http://localhost:3000/verificadorPag.html?url=' + encodeURIComponent(urlRetornada.shortened_url));
+                }
+            } catch (error) {
+                console.error("Erro ao encurtar o link:", error);
+            }
+        }
+   </script>
+</body>
+
+</html>
